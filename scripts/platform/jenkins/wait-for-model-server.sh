@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+LOCAL_MODEL_SERVER="${LOCAL_MODEL_SERVER:-vllm}"
+
+if [[ "${LOCAL_MODEL_SERVER}" == "ollama" ]]; then
+    echo "Using Ollama - model server already verified during warm-up."
+    exit 0
+fi
+
 MAX_ATTEMPTS=30
 WAIT_INTERVAL_SECONDS=5
 MODEL_SERVER_BASE_URL="${MODEL_SERVER_BASE_URL:-http://localhost:8000/v1}"
