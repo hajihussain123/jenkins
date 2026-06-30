@@ -15,7 +15,6 @@
 //     }
 // }
 
-
 pipeline {
     agent {
         kubernetes {
@@ -74,7 +73,7 @@ pipeline {
         DRY_RUN           = "${params.DRY_RUN}"
         AGENT_HARNESS     = "${params.AGENT_HARNESS}"
         ENABLE_DD_METRICS = "${params.ENABLE_DD_METRICS}"
-        DD_SITE           = "datadoghq.com"
+        DD_SITE           = 'datadoghq.com'
     }
 
     stages {
@@ -92,7 +91,7 @@ pipeline {
                     echo "Goal    : ${params.GOAL}"
                     echo "Dry run : ${params.DRY_RUN}"
                     if (!['claude', 'opencode', 'pi.dev'].contains(params.AGENT_HARNESS)) {
-                        error("AGENT_HARNESS must be one of: claude, opencode, pi.dev")
+                        error('AGENT_HARNESS must be one of: claude, opencode, pi.dev')
                     }
                     echo "Harness : ${params.AGENT_HARNESS}"
                 }
@@ -102,18 +101,30 @@ pipeline {
         stage('Warm Model Server') {
             steps {
                 container('model-server') {
-                    sh 'scripts/platform/jenkins/warm-model-server.sh'
+                    sh '''
+                apt-get update
+                apt-get install -y curl
+                scripts/platform/jenkins/warm-model-server.sh
+            '''
                 }
             }
         }
 
-    //     stage('Wait for Model Server') {
-    //         steps {
-    //             container('model-server') {
-    //                 sh 'scripts/platform/jenkins/wait-for-model-server.sh'
-    //             }
-    //         }
-    //     }
+        // stage('Warm Model Server') {
+        //     steps {
+        //         container('model-server') {
+        //             sh 'scripts/platform/jenkins/warm-model-server.sh'
+        //         }
+        //     }
+        // }
+
+        stage('Wait for Model Server') {
+            steps {
+                container('model-server') {
+                    sh 'scripts/platform/jenkins/wait-for-model-server.sh'
+                }
+            }
+        }
 
     //     stage('Preflight / Tests') {
     //         when {
@@ -121,7 +132,7 @@ pipeline {
     //         }
     //         stages {
     //             stage('GPU Check') {
-    //                 steps { 
+    //                 steps {
     //                     container('model-server') {
     //                         sh 'nvidia-smi'
     //                     }

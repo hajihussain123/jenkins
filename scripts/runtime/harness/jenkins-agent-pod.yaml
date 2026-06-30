@@ -24,13 +24,9 @@ spec:
     image: ubuntu:24.04
     # command: ["sleep"]
     # args: ["infinity"]
-    
+
     command: ["sh", "-c"]
-    args:
-      - |
-        apt-get update &&
-        apt-get install -y curl &&
-        sleep infinity
+    args: ["sleep infinity"]
 
     # command: ["sh", "-c"]
     # args: ["sleep infinity"]
