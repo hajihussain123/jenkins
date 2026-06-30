@@ -22,8 +22,15 @@ spec:
   - name: model-server
     # image: vllm/vllm-openai:latest
     image: ubuntu:24.04
-    command: ["sleep"]
-    args: ["infinity"]
+    # command: ["sleep"]
+    # args: ["infinity"]
+    
+    command: ["sh", "-c"]
+    args:
+      - |
+        apt-get update &&
+        apt-get install -y curl &&
+        sleep infinity
 
     # command: ["sh", "-c"]
     # args: ["sleep infinity"]
