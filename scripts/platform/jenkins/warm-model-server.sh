@@ -5,6 +5,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/../../../config.env"
+LOCAL_MODEL_SERVER="${LOCAL_MODEL_SERVER:-false}"
 
 MODEL="${MODEL_NAME:?MODEL_NAME must be set in repo-root config.env}"
 MODEL_SOURCE="${MODEL_SERVER_MODEL_ID:-${MODEL}}"
@@ -36,6 +37,46 @@ echo "Endpoint: ${MODEL_SERVER_BASE_URL}/chat/completions"
 echo "Readiness probe: ${READY_URL}"
 echo "Max model len: ${MODEL_SERVER_MAX_MODEL_LEN}"
 echo "GPU memory util: ${MODEL_SERVER_GPU_MEMORY_UTILIZATION}"
+
+# ------------------------------------------------------------------
+# Local development using Ollama instead of vLLM
+# ------------------------------------------------------------------
+if [[ "${LOCAL_MODEL_SERVER}" == "ollama" ]]; then
+    echo "=== Using Ollama as the local model server ==="
+
+    MODEL_SERVER_BASE_URL="${MODEL_SERVER_BASE_URL:-http://host.docker.internal:11434/v1}"
+    READY_URL="${MODEL_SERVER_BASE_URL}/models"
+
+    echo "Checking Ollama..."
+
+    if ! curl -fsS "${READY_URL}" > /dev/null; then
+        echo "ERROR: Ollama is not reachable at ${MODEL_SERVER_BASE_URL}"
+        exit 1
+    fi
+
+    echo "Available models:"
+    curl -fsS "${READY_URL}"
+
+    payload=$(cat <<EOF
+{"model":"${MODEL}","messages":[{"role":"user","content":"ping"}],"max_tokens":4}
+EOF
+)
+
+    echo
+    echo "Sending warm-up request..."
+
+    curl -fsS \
+        -X POST "${MODEL_SERVER_BASE_URL}/chat/completions" \
+        -H "Content-Type: application/json" \
+        -d "${payload}" \
+        >/tmp/model-server-warmup.json
+
+    echo "Warm-up successful."
+
+    cat /tmp/model-server-warmup.json
+
+    exit 0
+fi
 
 # If a healthy server is already up in this pod, reuse it.
 if curl -fsS "${READY_URL}" > /dev/null 2>&1; then
